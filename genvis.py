@@ -188,44 +188,41 @@ plt.xlabel('Genes')
 plt.ylabel('Importance')
 plt.savefig('node_importance_heatmap.png')
 
-def get_phenotype_descriptions_for_gene(gene_symbol, all_descriptions):
+def get_phenotype_descriptions_for_gene(gene_symbol):
+    phenotype_descriptions = []
     try:
         url = f"https://grch37.rest.ensembl.org/phenotype/gene/homo_sapiens/{gene_symbol}?content-type=application/json"
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            phenotype_descriptions = [item for entry in data if 'ontology_accessions' in entry for item in entry['ontology_accessions']]
-            all_descriptions.update(phenotype_descriptions)
+            for entry in data:
+                if 'ontology_accessions' in entry:
+                    for ontology in entry['ontology_accessions']:
+                        # Include the gene symbol in the tuple
+                        phenotype_descriptions.append((gene_symbol, ontology, 1))  # Count is always 1 for each phenotype per gene
         else:
             print(f"Error: Received status code {response.status_code}")
     except requests.RequestException as e:
         print(f"An error occurred: {e}")
+    return phenotype_descriptions
 
-description_count = Counter()  # Initialize a Counter object to count descriptions
-
-for gene in most_central_genes:
-    print(f"Gene: {gene}")
-    # Pass the Counter object as the second argument
-    get_phenotype_descriptions_for_gene(gene, description_count)
-    if description_count:
-        print("Associated Phenotype Descriptions:")
-        for description in description_count:
-            print(description)
-    else:
-        print("No phenotype description available")
-    print("\n")
-
-def save_phenotypes_to_file(description_count, filename='phenotypes.tsv'):
-    with open(filename, 'w', newline='') as file:
-        writer = csv.writer(file, delimiter='\t')  # Use tab delimiter for TSV format
-        writer.writerow(['Phenotype Description', 'Count'])  # Header
-        for description, count in description_count.items():
-            writer.writerow([description, count])
-    print(f"Phenotype descriptions saved to {filename}")
+# Initialize a list to hold all phenotype descriptions and their counts for each gene
+all_phenotype_descriptions = []
 
 # Accumulate phenotype descriptions for each gene
 for gene in most_central_genes:
-    get_phenotype_descriptions_for_gene(gene, description_count)
+    descriptions = get_phenotype_descriptions_for_gene(gene)
+    all_phenotype_descriptions.extend(descriptions)
+
+# Now `all_phenotype_descriptions` is a list of tuples (phenotype, count)
+
+def save_phenotypes_to_file(phenotype_data, filename='phenotypes.tsv'):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file, delimiter='\t')
+        writer.writerow(['Gene', 'Phenotype Description', 'Count'])
+        for gene, phenotype, count in phenotype_data:
+            writer.writerow([gene, phenotype, count])
+    print(f"Phenotype descriptions saved to {filename}")
 
 # Save the complete list of phenotype descriptions to a file
-save_phenotypes_to_file(description_count)
+save_phenotypes_to_file(all_phenotype_descriptions)
