@@ -194,7 +194,7 @@ def get_phenotype_descriptions_for_gene(gene_symbol, all_descriptions):
         response = requests.get(url)
         if response.status_code == 200:
             data = response.json()
-            phenotype_descriptions = [entry['description'] for entry in data if 'description' in entry]
+            phenotype_descriptions = [item for entry in data if 'ontology_accessions' in entry for item in entry['ontology_accessions']]
             all_descriptions.update(phenotype_descriptions)
         else:
             print(f"Error: Received status code {response.status_code}")
@@ -215,10 +215,12 @@ for gene in most_central_genes:
         print("No phenotype description available")
     print("\n")
 
-def save_phenotypes_to_file(description_count, filename='phenotypes.txt'):
-    with open(filename, 'w') as file:
+def save_phenotypes_to_file(description_count, filename='phenotypes.tsv'):
+    with open(filename, 'w', newline='') as file:
+        writer = csv.writer(file, delimiter='\t')  # Use tab delimiter for TSV format
+        writer.writerow(['Phenotype Description', 'Count'])  # Header
         for description, count in description_count.items():
-            file.write(f"{description}: {count}\n")
+            writer.writerow([description, count])
     print(f"Phenotype descriptions saved to {filename}")
 
 # Accumulate phenotype descriptions for each gene
