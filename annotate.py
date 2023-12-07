@@ -95,7 +95,7 @@ def read_gene_status(filename):
         next(reader)  # Skip the header
         return {row[0]: row[1] for row in reader}
 
-def save_snp_list(eqtl_data, filename='snp_list.txt'):
+def save_snp_list(eqtl_data, filename='snp_list.tsv'):
     with open(filename, 'a') as file:
         for item in eqtl_data:
             snp_id = item.get('snpId')
@@ -134,6 +134,7 @@ for gene in most_central_genes:
     pathway_counter.update(pathways)
     # Get the gencode ID
     gencode_id = get_gencode_id_for_gene(gene)
+    print(gencode_id)
     if gencode_id:
         eqtl_data = get_eqtl_data(gencode_id, tissue)
         if eqtl_data:
@@ -158,7 +159,7 @@ plt.xlabel('Genes')
 plt.ylabel('Average P-value')
 plt.title('Average P-values of Genes in ' + tissue)
 plt.xticks(rotation=90) # Rotating gene names for readability
-plt.subplots_adjust(bottom=0.2)
+plt.subplots_adjust(bottom=0.4)
 plt.savefig('average_pvals_colored.png')  # Save the plot with color coding
 
 # Create a DataFrame for the boxplot
